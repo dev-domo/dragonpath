@@ -1,0 +1,34 @@
+.app-header {
+  height: 72px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0 40px;
+  background: var(--gray0);
+  border-bottom: 1px solid var(--gray100);
+}
+
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.app-header__mark {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--brand-blue500);
+  color: var(--gray0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 18px;
+}
+
+.app-header__name {
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--gray900);
+}

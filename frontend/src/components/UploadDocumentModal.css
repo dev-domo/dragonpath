@@ -1,0 +1,59 @@
+.upload-modal-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+
+.upload-modal {
+  width: 480px;
+  max-width: calc(100% - 40px);
+  background: var(--gray0);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.upload-modal__title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 22px;
+}
+
+.upload-modal__description {
+  margin: 0;
+  font-size: 14px;
+  color: var(--gray700);
+  line-height: 1.4;
+}
+
+.upload-modal__file {
+  padding: 12px 18px;
+  height: auto;
+}
+
+.upload-modal__status {
+  margin: 0;
+  font-size: 14px;
+  color: var(--brand-blue700);
+  background: var(--brand-blue50);
+  border-radius: var(--radius-m);
+  padding: 12px 14px;
+}
+
+.upload-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.upload-modal__actions .btn {
+  height: 48px;
+  padding: 0 20px;
+}

@@ -1,0 +1,134 @@
+.path-review-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray50);
+  padding: 56px 80px;
+}
+
+.path-review-card {
+  width: 900px;
+  max-width: 100%;
+  background: var(--gray0);
+  border: 1px solid var(--gray100);
+  border-radius: var(--radius-xl);
+  padding: 48px 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.supported-badge {
+  align-self: flex-start;
+  background: var(--brand-blue50);
+  color: var(--brand-blue700);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: -0.18px;
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+}
+
+.supported-badge--unsupported {
+  background: #ffe4ea;
+  color: var(--brand-pink400);
+}
+
+.path-title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 36px;
+  letter-spacing: -0.72px;
+}
+
+.path-description {
+  margin: 0;
+  font-size: 16px;
+  color: var(--gray700);
+}
+
+.case-details {
+  display: flex;
+  gap: 60px;
+  background: var(--gray50);
+  border-radius: var(--radius-m);
+  padding: 16px 20px;
+}
+
+.case-details__item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.case-details__label {
+  margin: 0;
+  font-size: 12px;
+  color: var(--gray600);
+}
+
+.case-details__value {
+  margin: 0;
+  font-size: 16px;
+  color: var(--gray900);
+}
+
+.case-details__value--link {
+  color: var(--brand-blue700);
+}
+
+.divider {
+  height: 1px;
+  background: var(--gray100);
+}
+
+.preview-heading {
+  margin: 0;
+  font-weight: 600;
+  font-size: 20px;
+}
+
+.checklist-preview {
+  border: 1px solid var(--gray100);
+  border-radius: var(--radius-l);
+  overflow: hidden;
+}
+
+.checklist-preview__item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 26px 20px;
+  border-bottom: 1px solid var(--gray100);
+}
+
+.checklist-preview__item:last-child {
+  border-bottom: none;
+}
+
+.checklist-preview__number {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  background: var(--brand-blue50);
+  color: var(--brand-blue700);
+  font-weight: 600;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.checklist-preview__label {
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--gray800);
+}
+
+.path-review-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

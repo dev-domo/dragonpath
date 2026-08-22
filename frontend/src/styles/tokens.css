@@ -1,0 +1,41 @@
+/* Design tokens extracted from the DragonPath Figma file
+   (fileKey GDMOVvVo0Cm3Mkoy6kUdCh, node 55:987). Keep names aligned
+   with the Figma variable names so future syncs stay easy to diff. */
+:root {
+  /* brand */
+  --brand-blue50: #e6e8ff;
+  --brand-blue100: #c0c5ff;
+  --brand-blue500: #004fff;
+  --brand-blue600: #0040f1;
+  --brand-blue700: #0035e2;
+  --brand-blue800: #002ad6;
+  --brand-pink400: #f84d78;
+
+  /* grayscale */
+  --gray0: #ffffff;
+  --gray50: #f8fafc;
+  --gray100: #f5f7fa;
+  --gray300: #dcdee1;
+  --gray400: #c4c5c8;
+  --gray500: #abacaf;
+  --gray600: #939496;
+  --gray700: #494a4b;
+  --gray800: #313132;
+  --gray900: #181819;
+
+  /* radius */
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* spacing */
+  --space-xs: 6px;
+  --space-s: 12px;
+  --space-m: 16px;
+  --space-l: 24px;
+  --space-xl: 36px;
+
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
