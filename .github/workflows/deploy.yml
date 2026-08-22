@@ -3,6 +3,7 @@ name: Deploy
 on:
   push:
     branches: [main]
+  workflow_dispatch: {}
 
 jobs:
   verify:
@@ -32,12 +33,12 @@ jobs:
     needs: verify
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Render deploy
+      - name: Trigger Render Blueprint sync
         env:
-          HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          HOOK_URL: ${{ secrets.RENDER_SYNC_HOOK_URL }}
         run: |
           if [ -z "$HOOK_URL" ]; then
-            echo "RENDER_DEPLOY_HOOK_URL secret is not set yet — skipping deploy."
+            echo "RENDER_SYNC_HOOK_URL secret is not set yet — skipping deploy."
             echo "See README.md 'Deployment' section for one-time setup steps."
             exit 0
           fi

@@ -150,16 +150,21 @@ suffix (`https://dragonpath-<random>.onrender.com` unless renamed).
 3. In the new service's **Environment** tab, add `UPSTAGE_API_KEY` (the
    blueprint deliberately leaves it blank — never commit real keys to a
    public repo).
-4. In **Settings > Deploy Hook**, copy the hook URL, then either:
-   - give it to your assistant to run `gh secret set RENDER_DEPLOY_HOOK_URL`, or
+4. Since the service was created from a Blueprint, Render exposes a
+   **Sync Hook** for the whole blueprint (not a per-service Deploy Hook) —
+   find it on the Blueprint's page, not the service's. Copy that URL, then
+   either:
+   - give it to your assistant to run `gh secret set RENDER_SYNC_HOOK_URL`, or
    - add it yourself under the repo's **Settings > Secrets and variables >
-     Actions** as `RENDER_DEPLOY_HOOK_URL`.
+     Actions** as `RENDER_SYNC_HOOK_URL`.
 
 ### How auto-deploy works
 
 `.github/workflows/deploy.yml` runs on every push to `main`: it first
 builds the backend and frontend as a sanity check, then (only if that
-passes) calls the Render deploy hook to trigger a real deploy. Render's own
+passes) calls the Render Blueprint's sync hook to trigger a real deploy
+(the same workflow can also be run manually from the **Actions** tab via
+`workflow_dispatch`). Render's own
 git auto-deploy is intentionally turned off (`autoDeployTrigger: off` in
 `render.yaml`) so this workflow is the single, visible trigger — check the
 **Actions** tab to see deploy status instead of only the Render dashboard.
