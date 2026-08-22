@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppHeader } from "../components/AppHeader";
 import dragonMark from "../assets/character.svg";
+import whiteDragon from "../assets/whiteDragon.svg";
 import { api } from "../api/client";
 import type { VisaCase } from "../types";
 import "./CompletionPage.css";
@@ -85,7 +86,7 @@ export function CompletionPage() {
           </div>
         </div>
 
-        <img className="completion-mascot" src={dragonMark} alt="" />
+        <img className="completion-mascot" src={whiteDragon} alt="" />
       </div>
     </div>
   );
