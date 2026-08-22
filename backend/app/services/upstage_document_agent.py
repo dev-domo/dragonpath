@@ -15,6 +15,16 @@ Flow (per Upstage's documented contract):
 The agent's actual response key casing/spacing ("How to fix") is honored
 literally, but parsing here tolerates a few reasonable variants so a small
 prompt change on the Studio side doesn't silently break this integration.
+
+In practice this Studio agent ignores that documented JSON contract and
+instead free-associates a multi-section Korean markdown review (see the
+"Caveat" section of README.md). Since we can't change its Studio config,
+_INSTRUCTION below is sent as an accompanying input_text block asking it,
+in plain language, to answer in a specific two-line English format
+instead. The agent reliably follows this even though it never emits the
+originally documented JSON — see _parse_output for how each shape is
+handled, documented-JSON first, then this instructed format, then a raw-
+text fallback if the agent ever ignores instructions entirely.
 """
 
 from __future__ import annotations
@@ -41,6 +51,15 @@ POLL_TIMEOUT_SECONDS = 90
 
 RESULT_KEYS = ("result", "passed", "is_valid", "valid")
 FIX_KEYS = ("How to fix", "how_to_fix", "howToFix", "suggested_fix", "fix")
+
+_INSTRUCTION = (
+    "Reply only in English, in this exact two-part format:\n"
+    "Line 1: the single word PASS if the document is acceptable with nothing "
+    "missing, unreadable, or wrong, or NEEDS_FIX if it is not.\n"
+    "Line 2 (only if NEEDS_FIX): 1-3 short sentences explaining only why it "
+    "needs to be corrected or re-uploaded. Omit line 2 entirely if PASS.\n"
+    "Do not include a full itemized review or general visa requirements list."
+)
 
 
 class UpstageAgentError(RuntimeError):
@@ -105,18 +124,14 @@ class UpstageDocumentAgent:
     def _parse_output(self, output_text: Optional[str]) -> DocumentCheckResult:
         """Parse the agent's output_text into a pass/fail + explanation.
 
-        The documented contract is a JSON object: {"result": bool, "How to
-        fix": str}. In practice the Studio agent configured for this
-        integration currently returns a free-form markdown review instead
-        (observed even with config_id="1") — sometimes itself wrapped in
-        an extra layer of JSON string-encoding. Rather than guess a
-        pass/fail out of prose (which would let DragonPath silently
-        invent confidence it doesn't have — see D-08 Safety Rules), any
-        response that isn't the documented object is treated as
-        `needs_review`, with the agent's full analysis surfaced as the
-        explanation so the user still gets real, useful feedback. If the
-        Studio agent's config is later changed to emit the documented
-        shape, this same code path picks it up automatically.
+        Tries three shapes, most-trustworthy first:
+        1. The originally documented JSON object: {"result": bool, "How to
+           fix": str}, in case the Studio config is ever changed to match it.
+        2. The PASS / NEEDS_FIX two-line format requested by _INSTRUCTION,
+           which is what the live agent actually reliably produces.
+        3. Anything else: treated as `needs_review` with the raw text as the
+           explanation, rather than guessing pass/fail out of prose — never
+           invent confidence DragonPath doesn't have (D-08 Safety Rules).
         """
         if not output_text:
             raise UpstageAgentError("Upstage agent returned an empty response")
@@ -144,8 +159,18 @@ class UpstageDocumentAgent:
                 raw=parsed,
             )
 
-        free_text = parsed if isinstance(parsed, str) else output_text
-        return DocumentCheckResult(passed=False, how_to_fix=_clean_markdown(free_text), raw=output_text)
+        free_text = _clean_markdown(parsed if isinstance(parsed, str) else output_text)
+        first_line, _, rest = free_text.partition("\n")
+
+        if first_line.strip().upper().startswith("PASS"):
+            return DocumentCheckResult(passed=True, how_to_fix=None, raw=output_text)
+
+        if first_line.strip().upper().startswith("NEEDS_FIX"):
+            return DocumentCheckResult(
+                passed=False, how_to_fix=rest.strip() or None, raw=output_text
+            )
+
+        return DocumentCheckResult(passed=False, how_to_fix=free_text, raw=output_text)
 
     async def _upload_file(
         self, client: httpx.AsyncClient, content: bytes, filename: str, content_type: str
@@ -169,7 +194,10 @@ class UpstageDocumentAgent:
                 "input": [
                     {
                         "role": "user",
-                        "content": [{"type": "input_file", "file_id": file_id}],
+                        "content": [
+                            {"type": "input_text", "text": _INSTRUCTION},
+                            {"type": "input_file", "file_id": file_id},
+                        ],
                     }
                 ],
             },

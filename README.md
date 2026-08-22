@@ -92,22 +92,26 @@ poll `GET /v2/responses/{id}` until it completes, then parse `output_text`.
 **Caveat found while wiring this up:** the documented contract for this
 agent is a JSON object `{"result": bool, "How to fix": string}`, but the
 currently deployed Studio agent (confirmed with both the default config and
-`config_id: "1"`) actually returns a free-form Korean markdown review
-instead. Rather than guess a pass/fail out of that prose — which would let
-DragonPath silently invent confidence it doesn't have, exactly what D-08's
-safety rules warn against — `_parse_output` in that file does this:
+`config_id: "1"`) actually free-associates a multi-section Korean markdown
+review instead of emitting that JSON. Since the Studio config isn't ours to
+change, `_create_job` sends an accompanying `input_text` block (the
+`_INSTRUCTION` constant) asking the agent, in plain language, to answer in
+English in a specific two-line format: `PASS`, or `NEEDS_FIX` followed by a
+short reason. The agent reliably follows this even though it still never
+emits the originally documented JSON. `_parse_output` tries three shapes,
+most-trustworthy first:
 
-1. If `output_text` parses as the documented `{result, How to fix}` object,
-   use it directly.
-2. Otherwise, treat the response as `needs_review` (red) and surface the
-   agent's full analysis as the explanation, so the user still gets real,
-   specific feedback instead of a generic message.
+1. The documented `{result, How to fix}` object, if the Studio config is
+   ever changed to match it.
+2. The instructed `PASS` / `NEEDS_FIX` two-line format — what it actually
+   returns today, giving a real pass/fail signal instead of a guess, plus a
+   concise English reason (shown as-is under "How to fix this" — DragonPath
+   doesn't show or store the agent's fuller reasoning beyond that).
+3. Anything else unrecognized: treated as `needs_review`, with the raw text
+   as the explanation, rather than inventing a pass/fail out of prose.
 
-If the Studio agent's prompt/config is later changed to emit the documented
-JSON shape, path 1 picks it up automatically — no code change needed. Until
-then, uploads will rarely show "blue/passed" from the agent alone; the
-manual gray→blue check is the practical way to move a pending item forward
-in the meantime.
+If the Studio agent's config is later changed to emit the documented JSON
+directly, path 1 picks it up automatically — no code change needed.
 
 `UPSTAGE_API_KEY` lives in `backend/.env` (gitignored) — a working dev key
 was provided during setup; rotate it before any shared/production use.
@@ -127,6 +131,59 @@ proxies to it and returns `503` with a clear message if `AGENT_BASE_URL`
 isn't set yet. Once that agent is deployed, set `AGENT_BASE_URL` /
 `AGENT_API_KEY` in `backend/.env`, and adjust `AgentClient.send_message` if
 its actual request/response shape differs.
+
+## Deployment
+
+The app runs as a single service: a multi-stage `Dockerfile` (repo root)
+builds the React app, then copies it into the FastAPI container, which
+serves both the API (`/api/*`) and the static app (everything else, with a
+SPA fallback to `index.html` — see the bottom of `backend/app/main.py`).
+One origin, no CORS to configure, no separate frontend host.
+
+Live URL, once deployed: see the Render dashboard, or `render.yaml`'s
+service name (`dragonpath`) plus your Render account's default domain
+suffix (`https://dragonpath-<random>.onrender.com` unless renamed).
+
+### One-time setup (do this yourself — account/billing can't be automated)
+
+1. Sign up at [render.com](https://render.com) (free, no card required for
+   the free plan).
+2. **New > Blueprint**, point it at this GitHub repo. Render reads
+   `render.yaml` and creates the `dragonpath` web service from the
+   Dockerfile automatically.
+3. In the new service's **Environment** tab, add `UPSTAGE_API_KEY` (the
+   blueprint deliberately leaves it blank — never commit real keys to a
+   public repo).
+4. Since the service was created from a Blueprint, Render exposes a
+   **Sync Hook** for the whole blueprint (not a per-service Deploy Hook) —
+   find it on the Blueprint's page, not the service's. Copy that URL, then
+   either:
+   - give it to your assistant to run `gh secret set RENDER_SYNC_HOOK_URL`, or
+   - add it yourself under the repo's **Settings > Secrets and variables >
+     Actions** as `RENDER_SYNC_HOOK_URL`.
+
+### How auto-deploy works
+
+`.github/workflows/deploy.yml` runs on every push to `main`: it first
+builds the backend and frontend as a sanity check, then (only if that
+passes) calls the Render Blueprint's sync hook to trigger a real deploy
+(the same workflow can also be run manually from the **Actions** tab via
+`workflow_dispatch`). Render's own
+git auto-deploy is intentionally turned off (`autoDeployTrigger: off` in
+`render.yaml`) so this workflow is the single, visible trigger — check the
+**Actions** tab to see deploy status instead of only the Render dashboard.
+Until the secret is set, the deploy step logs a message and exits cleanly
+rather than failing the build.
+
+### Known limitations of this deployment
+
+- **State resets on every deploy/restart.** The in-memory `CaseStore` isn't
+  a real database — pushing to `main` (or Render restarting the free-tier
+  instance) wipes every visa case. Fine for a demo, not for real users yet.
+- **Free-tier cold starts.** After ~15 minutes idle, Render spins the
+  instance down; the next request takes ~30–50s to wake it back up.
+- **No auth.** Anyone with a case's URL can open/edit it. There's no login,
+  so this is only appropriate for a shared demo, not real applicant data.
 
 ## Design source
 
