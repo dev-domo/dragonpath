@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: dragonpath
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/health
+    autoDeployTrigger: off # deploys are triggered by .github/workflows/deploy.yml instead
+    envVars:
+      - key: UPSTAGE_API_KEY
+        sync: false # set manually in the Render dashboard — do not commit real keys
+      - key: CORS_ORIGINS
+        value: "*"
+      - key: DEBUG
+        value: "false"

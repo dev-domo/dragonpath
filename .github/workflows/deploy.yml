@@ -1,0 +1,44 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Backend sanity check
+        working-directory: backend
+        run: |
+          pip install -r requirements.txt
+          python -m compileall -q app
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Frontend build check
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy
+        env:
+          HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK_URL" ]; then
+            echo "RENDER_DEPLOY_HOOK_URL secret is not set yet — skipping deploy."
+            echo "See README.md 'Deployment' section for one-time setup steps."
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK_URL"

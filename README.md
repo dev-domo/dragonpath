@@ -128,6 +128,54 @@ isn't set yet. Once that agent is deployed, set `AGENT_BASE_URL` /
 `AGENT_API_KEY` in `backend/.env`, and adjust `AgentClient.send_message` if
 its actual request/response shape differs.
 
+## Deployment
+
+The app runs as a single service: a multi-stage `Dockerfile` (repo root)
+builds the React app, then copies it into the FastAPI container, which
+serves both the API (`/api/*`) and the static app (everything else, with a
+SPA fallback to `index.html` — see the bottom of `backend/app/main.py`).
+One origin, no CORS to configure, no separate frontend host.
+
+Live URL, once deployed: see the Render dashboard, or `render.yaml`'s
+service name (`dragonpath`) plus your Render account's default domain
+suffix (`https://dragonpath-<random>.onrender.com` unless renamed).
+
+### One-time setup (do this yourself — account/billing can't be automated)
+
+1. Sign up at [render.com](https://render.com) (free, no card required for
+   the free plan).
+2. **New > Blueprint**, point it at this GitHub repo. Render reads
+   `render.yaml` and creates the `dragonpath` web service from the
+   Dockerfile automatically.
+3. In the new service's **Environment** tab, add `UPSTAGE_API_KEY` (the
+   blueprint deliberately leaves it blank — never commit real keys to a
+   public repo).
+4. In **Settings > Deploy Hook**, copy the hook URL, then either:
+   - give it to your assistant to run `gh secret set RENDER_DEPLOY_HOOK_URL`, or
+   - add it yourself under the repo's **Settings > Secrets and variables >
+     Actions** as `RENDER_DEPLOY_HOOK_URL`.
+
+### How auto-deploy works
+
+`.github/workflows/deploy.yml` runs on every push to `main`: it first
+builds the backend and frontend as a sanity check, then (only if that
+passes) calls the Render deploy hook to trigger a real deploy. Render's own
+git auto-deploy is intentionally turned off (`autoDeployTrigger: off` in
+`render.yaml`) so this workflow is the single, visible trigger — check the
+**Actions** tab to see deploy status instead of only the Render dashboard.
+Until the secret is set, the deploy step logs a message and exits cleanly
+rather than failing the build.
+
+### Known limitations of this deployment
+
+- **State resets on every deploy/restart.** The in-memory `CaseStore` isn't
+  a real database — pushing to `main` (or Render restarting the free-tier
+  instance) wipes every visa case. Fine for a demo, not for real users yet.
+- **Free-tier cold starts.** After ~15 minutes idle, Render spins the
+  instance down; the next request takes ~30–50s to wake it back up.
+- **No auth.** Anyone with a case's URL can open/edit it. There's no login,
+  so this is only appropriate for a shared demo, not real applicant data.
+
 ## Design source
 
 Frontend screens were implemented from the Figma file linked in the
