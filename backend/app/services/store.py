@@ -180,17 +180,12 @@ class CaseStore:
             document.status = DocumentStatus.needs_review
             document.verified_note_en = "Needs attention"
 
-            next_step = (
-                "Review the notes above, fix anything that's missing or "
-                "incorrect, then upload the corrected document again."
-            )
-
             existing_issue = next(
                 (i for i in case.issues if i.issue_id == item.issue_id), None
             )
             if existing_issue is not None:
                 existing_issue.explanation_en = fix_text
-                existing_issue.suggested_fix_steps_en = [next_step]
+                existing_issue.suggested_fix_steps_en = [fix_text]
                 existing_issue.status = IssueStatus.open
                 existing_issue.document_ids = [document.document_id]
                 issue = existing_issue
@@ -202,7 +197,7 @@ class CaseStore:
                     severity=IssueSeverity.high,
                     title_en=f"Fix an issue with {item.title_en.lower()}",
                     explanation_en=fix_text,
-                    suggested_fix_steps_en=[next_step],
+                    suggested_fix_steps_en=[fix_text],
                     document_ids=[document.document_id],
                     status=IssueStatus.open,
                     created_at=now,

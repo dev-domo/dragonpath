@@ -37,32 +37,6 @@
   letter-spacing: -0.36px;
 }
 
-.agent-notes {
-  background: var(--gray50);
-  border-radius: var(--radius-l);
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.agent-notes__title {
-  margin: 0;
-  font-weight: 600;
-  font-size: 16px;
-  color: var(--gray800);
-}
-
-.agent-notes__body {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.6;
-  color: var(--gray700);
-  white-space: pre-wrap;
-  max-height: 320px;
-  overflow-y: auto;
-}
-
 .compared-values {
   background: var(--gray50);
   border-radius: var(--radius-l);

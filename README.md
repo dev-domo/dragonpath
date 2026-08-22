@@ -92,22 +92,26 @@ poll `GET /v2/responses/{id}` until it completes, then parse `output_text`.
 **Caveat found while wiring this up:** the documented contract for this
 agent is a JSON object `{"result": bool, "How to fix": string}`, but the
 currently deployed Studio agent (confirmed with both the default config and
-`config_id: "1"`) actually returns a free-form Korean markdown review
-instead. Rather than guess a pass/fail out of that prose — which would let
-DragonPath silently invent confidence it doesn't have, exactly what D-08's
-safety rules warn against — `_parse_output` in that file does this:
+`config_id: "1"`) actually free-associates a multi-section Korean markdown
+review instead of emitting that JSON. Since the Studio config isn't ours to
+change, `_create_job` sends an accompanying `input_text` block (the
+`_INSTRUCTION` constant) asking the agent, in plain language, to answer in
+English in a specific two-line format: `PASS`, or `NEEDS_FIX` followed by a
+short reason. The agent reliably follows this even though it still never
+emits the originally documented JSON. `_parse_output` tries three shapes,
+most-trustworthy first:
 
-1. If `output_text` parses as the documented `{result, How to fix}` object,
-   use it directly.
-2. Otherwise, treat the response as `needs_review` (red) and surface the
-   agent's full analysis as the explanation, so the user still gets real,
-   specific feedback instead of a generic message.
+1. The documented `{result, How to fix}` object, if the Studio config is
+   ever changed to match it.
+2. The instructed `PASS` / `NEEDS_FIX` two-line format — what it actually
+   returns today, giving a real pass/fail signal instead of a guess, plus a
+   concise English reason (shown as-is under "How to fix this" — DragonPath
+   doesn't show or store the agent's fuller reasoning beyond that).
+3. Anything else unrecognized: treated as `needs_review`, with the raw text
+   as the explanation, rather than inventing a pass/fail out of prose.
 
-If the Studio agent's prompt/config is later changed to emit the documented
-JSON shape, path 1 picks it up automatically — no code change needed. Until
-then, uploads will rarely show "blue/passed" from the agent alone; the
-manual gray→blue check is the practical way to move a pending item forward
-in the meantime.
+If the Studio agent's config is later changed to emit the documented JSON
+directly, path 1 picks it up automatically — no code change needed.
 
 `UPSTAGE_API_KEY` lives in `backend/.env` (gitignored) — a working dev key
 was provided during setup; rotate it before any shared/production use.
