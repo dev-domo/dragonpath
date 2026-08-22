@@ -8,6 +8,7 @@ require changing the API routes.
 
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
@@ -39,6 +40,24 @@ def _new_id(prefix: str) -> str:
     return f"{prefix}-{uuid.uuid4().hex[:8]}"
 
 
+_LIST_MARKER_RE = re.compile(r"^(?:[-*•]|\d+[.)])\s+")
+
+
+def _split_fix_steps(fix_text: str) -> list[str]:
+    """Turn the agent's raw "how to fix" text into a list of discrete
+    steps, so the UI can number them (1, 2, 3, ...) instead of dumping
+    one undifferentiated paragraph. Splits on newlines and strips any
+    list markers/numbering the source text already has, since the UI
+    supplies its own numbering.
+    """
+    lines = [line.strip() for line in fix_text.splitlines()]
+    lines = [line for line in lines if line]
+    if not lines:
+        cleaned = fix_text.strip()
+        return [cleaned] if cleaned else []
+    return [_LIST_MARKER_RE.sub("", line).strip() for line in lines]
+
+
 class InvalidTransitionError(Exception):
     pass
 
@@ -59,7 +78,7 @@ class CaseStore:
         checklist = [
             ChecklistItem(
                 checklist_item_id=_new_id("item"),
-                title_en="Confirm your personal details",
+                title_en="Passport Bio Page",
                 description_en="Upload your passport bio page to confirm your identity.",
                 status=ChecklistItemStatus.not_started,
                 completion_method=CompletionMethod.document_verified,
@@ -68,7 +87,7 @@ class CaseStore:
             ),
             ChecklistItem(
                 checklist_item_id=_new_id("item"),
-                title_en="Upload proof of enrollment",
+                title_en="Certificate of Enrollment",
                 description_en="Certificate of enrollment issued by your school.",
                 status=ChecklistItemStatus.not_started,
                 completion_method=CompletionMethod.document_verified,
@@ -77,7 +96,7 @@ class CaseStore:
             ),
             ChecklistItem(
                 checklist_item_id=_new_id("item"),
-                title_en="Submit your application form",
+                title_en="Application Form for Extension of Sojourn Period",
                 description_en="The visa extension application form for this case.",
                 status=ChecklistItemStatus.not_started,
                 completion_method=CompletionMethod.document_verified,
@@ -86,7 +105,7 @@ class CaseStore:
             ),
             ChecklistItem(
                 checklist_item_id=_new_id("item"),
-                title_en="Prepare financial proof",
+                title_en="Bank Balance Certificate",
                 description_en="A recent bank balance certificate.",
                 status=ChecklistItemStatus.not_started,
                 completion_method=CompletionMethod.document_verified,
@@ -116,19 +135,41 @@ class CaseStore:
         return self._cases.get(case_id)
 
     def mark_item_checked_manually(self, case_id: str, item_id: str) -> VisaCase:
-        """The one-directional gray -> blue toggle: a user can hand-confirm
-        a pending item without uploading anything. It cannot undo a
-        completed item, and it cannot clear a needs_review (red) item —
-        those only change via a real re-upload.
+        """The manual gray -> blue toggle: a user can hand-confirm a
+        pending item without uploading anything. It also doubles as the
+        manual override for a needs_review (red) item — e.g. when the
+        checklist item was only flagged because documents were approved
+        out of order rather than an actual document problem — clicking
+        the checkbox again resolves it straight to blue. It cannot undo
+        an already-completed item.
         """
         case = self._require_case(case_id)
         item = self._require_item(case, item_id)
-        if item.status != ChecklistItemStatus.not_started:
+        if item.status not in (
+            ChecklistItemStatus.not_started,
+            ChecklistItemStatus.needs_review,
+        ):
             raise InvalidTransitionError(
-                "Only a pending item can be checked off manually."
+                "Only a pending or flagged item can be checked off manually."
             )
+
+        now = datetime.now(timezone.utc)
+
+        if item.status == ChecklistItemStatus.needs_review:
+            for existing in case.issues:
+                if existing.issue_id == item.issue_id:
+                    existing.status = IssueStatus.resolved
+            document = next(
+                (doc for doc in case.documents if doc.document_id == item.document_id), None
+            )
+            if document is not None:
+                document.status = DocumentStatus.verified
+                document.verified_note_en = "Verified"
+                document.issue_id = None
+            item.issue_id = None
+
         item.status = ChecklistItemStatus.completed
-        case.updated_at = datetime.now(timezone.utc)
+        case.updated_at = now
         self._recompute_case_status(case)
         return case
 
@@ -173,7 +214,6 @@ class CaseStore:
             for existing in case.issues:
                 if existing.issue_id == item.issue_id:
                     existing.status = IssueStatus.resolved
-                    existing.resolved_at = now
             item.issue_id = None
         else:
             fix_text = result.how_to_fix or DEFAULT_FIX_TEXT

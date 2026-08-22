@@ -94,9 +94,27 @@
 
 .how-to-fix__step {
   margin: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   font-size: 16px;
   color: var(--gray700);
-  line-height: 1.3;
+  line-height: 1.4;
+}
+
+.how-to-fix__index {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--brand-blue600);
+  color: var(--gray0);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
 }
 
 .privacy-note {

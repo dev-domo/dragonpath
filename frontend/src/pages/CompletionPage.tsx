@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppHeader } from "../components/AppHeader";
+import dragonMark from "../assets/character.svg";
 import { api } from "../api/client";
 import type { VisaCase } from "../types";
 import "./CompletionPage.css";
@@ -33,7 +34,10 @@ export function CompletionPage() {
       <AppHeader />
       <div className="completion-body">
         <div className="success-card">
-          <div className="success-icon">✓</div>
+          <div className="success-icon">
+            <img className="success-icon__mark" src={dragonMark} alt="" />
+            <span className="success-icon__badge">✓</span>
+          </div>
           <p className="success-eyebrow">CHECKLIST COMPLETE</p>
           <h1 className="success-title">You're ready to submit</h1>
           <p className="success-description">
@@ -80,6 +84,8 @@ export function CompletionPage() {
             </a>
           </div>
         </div>
+
+        <img className="completion-mascot" src={dragonMark} alt="" />
       </div>
     </div>
   );
