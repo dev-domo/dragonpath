@@ -20,3 +20,18 @@
 .doc-checkbox--red {
   background: var(--brand-pink400);
 }
+
+.doc-checkbox--clickable {
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+.doc-checkbox--clickable:hover {
+  opacity: 0.85;
+}
+
+.doc-checkbox--clickable:active {
+  transform: scale(0.94);
+}

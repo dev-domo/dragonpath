@@ -62,6 +62,13 @@ export function DashboardPage() {
     }
   }
 
+  async function handleCheckboxClick(event: React.MouseEvent, item: ChecklistItem) {
+    event.stopPropagation();
+    if (item.status !== "not_started" && item.status !== "needs_review") return;
+    const updated = await api.checkItemManually(visaCase!.case_id, item.checklist_item_id);
+    setVisaCase(updated);
+  }
+
   function openUploadModal(itemId: string) {
     setActiveIssue(null);
     setUploadError(null);
@@ -156,7 +163,10 @@ export function DashboardPage() {
                 className="checklist-row"
                 onClick={() => handleRowClick(item)}
               >
-                <DocumentCheckbox tone={toneForStatus(item.status)} />
+                <DocumentCheckbox
+                  tone={toneForStatus(item.status)}
+                  onClick={(event) => handleCheckboxClick(event, item)}
+                />
                 <div className="checklist-row__body">
                   <p className="checklist-row__title">{item.title_en}</p>
                   <p className="checklist-row__description">{item.description_en}</p>
@@ -175,7 +185,7 @@ export function DashboardPage() {
               disabled={!isChecklistComplete}
               onClick={() => navigate(`/cases/${visaCase.case_id}/complete`)}
             >
-              완료
+              Complete
             </button>
           </div>
         </main>

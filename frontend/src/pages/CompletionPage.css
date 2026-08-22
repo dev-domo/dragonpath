@@ -1,10 +1,28 @@
 .completion-body {
   flex: 1;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   background: var(--gray50);
   padding: 40px;
+  overflow: hidden;
+}
+
+.completion-mascot {
+  position: absolute;
+  right: 24px;
+  bottom: 0;
+  width: 200px;
+  height: auto;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@media (max-width: 900px) {
+  .completion-mascot {
+    display: none;
+  }
 }
 
 .success-card {
@@ -21,12 +39,33 @@
 }
 
 .success-icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 36px;
-  background: var(--brand-blue600);
+  width: 96px;
+  height: 96px;
+  border-radius: 48px;
+  background: var(--brand-blue500);
   color: var(--gray0);
-  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.success-icon__mark {
+  width: 68px;
+  height: 68px;
+}
+
+.success-icon__badge {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 30px;
+  height: 30px;
+  border-radius: 15px;
+  background: var(--gray0);
+  border: 3px solid var(--brand-blue50);
+  color: var(--brand-blue600);
+  font-size: 15px;
   font-weight: 700;
   display: flex;
   align-items: center;

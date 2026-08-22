@@ -34,16 +34,12 @@ export function MismatchDrawer({ issue, onClose, onReplace }: Props) {
           </div>
         )}
 
-        <div className="agent-notes">
-          <p className="agent-notes__title">What DragonPath found</p>
-          <p className="agent-notes__body">{issue.explanation_en}</p>
-        </div>
-
         <div className="how-to-fix">
           <p className="how-to-fix__title">How to fix this</p>
           {issue.suggested_fix_steps_en.map((step, index) => (
             <p className="how-to-fix__step" key={index}>
-              {step}
+              <span className="how-to-fix__index">{index + 1}</span>
+              <span>{step}</span>
             </p>
           ))}
         </div>
