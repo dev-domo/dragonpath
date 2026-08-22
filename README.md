@@ -168,12 +168,19 @@ suffix (`https://dragonpath-<random>.onrender.com` unless renamed).
 builds the backend and frontend as a sanity check, then (only if that
 passes) calls the Render Blueprint's sync hook to trigger a real deploy
 (the same workflow can also be run manually from the **Actions** tab via
-`workflow_dispatch`). Render's own
-git auto-deploy is intentionally turned off (`autoDeployTrigger: off` in
-`render.yaml`) so this workflow is the single, visible trigger — check the
-**Actions** tab to see deploy status instead of only the Render dashboard.
-Until the secret is set, the deploy step logs a message and exits cleanly
-rather than failing the build.
+`workflow_dispatch`). Until the secret is set, the deploy step logs a
+message and exits cleanly rather than failing the build.
+
+`render.yaml` sets `autoDeployTrigger: commit` — an earlier version of this
+file set it to `off`, intending Actions to be the *only* trigger, but that
+turned out to also silently swallow deploys requested via the sync hook,
+not just Render's own git-push detection (a "sync started" response from
+the hook doesn't mean a new deploy actually happened — check the service's
+**Events** tab for a `Deploy live for <commit>` entry matching your latest
+commit to confirm). With `commit`, both paths reliably deploy; a push may
+briefly show two back-to-back events (Render's own trigger and the
+workflow's hook call) rather than exactly one — that's expected and
+harmless, not a bug.
 
 ### Known limitations of this deployment
 
