@@ -44,13 +44,29 @@ def get_readiness(case_id: str) -> ReadinessSummary:
 
 @router.post("/{case_id}/checklist/{item_id}/check", response_model=VisaCase)
 def check_item_manually(case_id: str, item_id: str) -> VisaCase:
-    """The gray -> blue manual toggle. One-directional: only works on a
-    pending item, and never overrides a system-verified or flagged one.
+    """The gray -> blue manual check: hand-confirm a pending item, or
+    override a flagged one. Reversible with /uncheck as long as no
+    document was uploaded for the item.
     """
     if store.get_case(case_id) is None:
         raise HTTPException(status_code=404, detail="Visa case not found")
     try:
         return store.mark_item_checked_manually(case_id, item_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="Checklist item not found")
+    except InvalidTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+
+
+@router.post("/{case_id}/checklist/{item_id}/uncheck", response_model=VisaCase)
+def uncheck_item_manually(case_id: str, item_id: str) -> VisaCase:
+    """The blue -> gray undo. Only reverses a hand-confirmed check; an
+    item completed by a checked document returns 409.
+    """
+    if store.get_case(case_id) is None:
+        raise HTTPException(status_code=404, detail="Visa case not found")
+    try:
+        return store.uncheck_item_manually(case_id, item_id)
     except KeyError:
         raise HTTPException(status_code=404, detail="Checklist item not found")
     except InvalidTransitionError as exc:

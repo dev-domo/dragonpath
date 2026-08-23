@@ -29,6 +29,9 @@ export const api = {
   checkItemManually: (caseId: string, itemId: string) =>
     request<VisaCase>(`/cases/${caseId}/checklist/${itemId}/check`, { method: "POST" }),
 
+  uncheckItemManually: (caseId: string, itemId: string) =>
+    request<VisaCase>(`/cases/${caseId}/checklist/${itemId}/uncheck`, { method: "POST" }),
+
   uploadDocument: (caseId: string, itemId: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
