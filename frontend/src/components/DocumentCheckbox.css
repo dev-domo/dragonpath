@@ -35,3 +35,17 @@
 .doc-checkbox--clickable:active {
   transform: scale(0.94);
 }
+
+/* Verified by a real uploaded document — clicking explains why it is
+   locked rather than toggling, so drop the interactive affordances. */
+.doc-checkbox--locked {
+  cursor: default;
+}
+
+.doc-checkbox--locked:hover {
+  opacity: 1;
+}
+
+.doc-checkbox--locked:active {
+  transform: none;
+}

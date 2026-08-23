@@ -4,6 +4,8 @@ type Tone = "gray" | "blue" | "red";
 
 interface Props {
   tone: Tone;
+  /** Completed by a checked document, so the user cannot toggle it off. */
+  locked?: boolean;
   onClick?: (event: React.MouseEvent) => void;
 }
 
@@ -20,12 +22,15 @@ const CHECK_ICON = (
   </svg>
 );
 
-export function DocumentCheckbox({ tone, onClick }: Props) {
+export function DocumentCheckbox({ tone, locked = false, onClick }: Props) {
   if (onClick) {
     return (
       <button
         type="button"
-        className={`doc-checkbox doc-checkbox--${tone} doc-checkbox--clickable`}
+        className={`doc-checkbox doc-checkbox--${tone} doc-checkbox--clickable${
+          locked ? " doc-checkbox--locked" : ""
+        }`}
+        aria-pressed={tone === "blue"}
         onClick={onClick}
       >
         {CHECK_ICON}

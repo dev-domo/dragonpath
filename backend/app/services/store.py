@@ -141,7 +141,8 @@ class CaseStore:
         checklist item was only flagged because documents were approved
         out of order rather than an actual document problem — clicking
         the checkbox again resolves it straight to blue. It cannot undo
-        an already-completed item.
+        an already-completed item — that is what uncheck_item_manually
+        is for.
         """
         case = self._require_case(case_id)
         item = self._require_item(case, item_id)
@@ -169,7 +170,33 @@ class CaseStore:
             item.issue_id = None
 
         item.status = ChecklistItemStatus.completed
+        item.completion_method = CompletionMethod.user_check
         case.updated_at = now
+        self._recompute_case_status(case)
+        return case
+
+    def uncheck_item_manually(self, case_id: str, item_id: str) -> VisaCase:
+        """Undo a hand-confirmed check: blue -> gray.
+
+        This only reverses a check the user made by hand. An item that a
+        real uploaded document completed still has that document attached,
+        and un-checking it would leave the checklist contradicting the
+        agent's verdict, so that stays locked — replace the document
+        instead.
+        """
+        case = self._require_case(case_id)
+        item = self._require_item(case, item_id)
+        if item.status != ChecklistItemStatus.completed:
+            raise InvalidTransitionError("Only a completed item can be un-checked.")
+        if item.document_id is not None:
+            raise InvalidTransitionError(
+                "This item was completed by a checked document. Upload a "
+                "replacement instead of un-checking it."
+            )
+
+        item.status = ChecklistItemStatus.not_started
+        item.completion_method = CompletionMethod.document_verified
+        case.updated_at = datetime.now(timezone.utc)
         self._recompute_case_status(case)
         return case
 

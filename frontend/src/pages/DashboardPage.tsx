@@ -21,7 +21,7 @@ export function DashboardPage() {
   const [activeIssue, setActiveIssue] = useState<ValidationIssue | null>(null);
   const [uploadTargetItemId, setUploadTargetItemId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!caseId) return;
@@ -51,33 +51,53 @@ export function DashboardPage() {
     return visaCase!.issues.find((issue) => issue.issue_id === issueId) ?? null;
   }
 
-  async function handleRowClick(item: ChecklistItem) {
-    if (item.status === "not_started") {
-      const updated = await api.checkItemManually(visaCase!.case_id, item.checklist_item_id);
-      setVisaCase(updated);
+  /** A step the user hand-confirmed can be un-checked again. One that a
+   *  checked document completed cannot: the agent's verdict still stands,
+   *  so the only way to change it is to upload a replacement. */
+  function isLocked(item: ChecklistItem) {
+    return item.status === "completed" && item.document_id !== null;
+  }
+
+  async function toggleItem(item: ChecklistItem) {
+    if (isLocked(item)) {
+      setActionError(
+        "This step was completed by a checked document. Upload a replacement to change it."
+      );
       return;
     }
+    try {
+      const updated =
+        item.status === "completed"
+          ? await api.uncheckItemManually(visaCase!.case_id, item.checklist_item_id)
+          : await api.checkItemManually(visaCase!.case_id, item.checklist_item_id);
+      setVisaCase(updated);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "That did not work. Please try again.");
+    }
+  }
+
+  async function handleRowClick(item: ChecklistItem) {
     if (item.status === "needs_review") {
       setActiveIssue(findIssue(item.issue_id));
+      return;
     }
+    await toggleItem(item);
   }
 
   async function handleCheckboxClick(event: React.MouseEvent, item: ChecklistItem) {
     event.stopPropagation();
-    if (item.status !== "not_started" && item.status !== "needs_review") return;
-    const updated = await api.checkItemManually(visaCase!.case_id, item.checklist_item_id);
-    setVisaCase(updated);
+    await toggleItem(item);
   }
 
   function openUploadModal(itemId: string) {
     setActiveIssue(null);
-    setUploadError(null);
+    setActionError(null);
     setUploadTargetItemId(itemId);
   }
 
   async function handleUploadSubmit(itemId: string, file: File) {
     setIsUploading(true);
-    setUploadError(null);
+    setActionError(null);
     try {
       const response = await api.uploadDocument(visaCase!.case_id, itemId, file);
       setVisaCase(response.case);
@@ -87,7 +107,7 @@ export function DashboardPage() {
         if (issue) setActiveIssue(issue);
       }
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed. Please try again.");
+      setActionError(err instanceof Error ? err.message : "Upload failed. Please try again.");
     } finally {
       setIsUploading(false);
     }
@@ -165,6 +185,7 @@ export function DashboardPage() {
               >
                 <DocumentCheckbox
                   tone={toneForStatus(item.status)}
+                  locked={isLocked(item)}
                   onClick={(event) => handleCheckboxClick(event, item)}
                 />
                 <div className="checklist-row__body">
@@ -268,9 +289,9 @@ export function DashboardPage() {
           onSubmit={handleUploadSubmit}
         />
       )}
-      {uploadError && (
-        <div className="upload-toast" onClick={() => setUploadError(null)}>
-          {uploadError}
+      {actionError && (
+        <div className="upload-toast" onClick={() => setActionError(null)}>
+          {actionError}
         </div>
       )}
     </div>
